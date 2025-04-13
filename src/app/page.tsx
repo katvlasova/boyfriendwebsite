@@ -73,32 +73,51 @@ async function getRandomQuote(): Promise<QuoteData> {
     trim: true
   }) as string[][];
 
-  // Filter for records that have all required fields AND a valid YouTube URL
-  const validRecords = records.filter(record => {
-    if (!record || record.length < 5) return false;
-    if (!record.slice(0, 4).every(field => field?.trim())) return false;
+  // Filter for valid records and organize fields
+  const validFields = {
+    occupations: [] as string[],
+    evilThings: [] as string[],
+    reasons: [] as string[],
+    extraInfos: [] as string[],
+    youtubeUrls: [] as string[]
+  };
+
+  records.forEach(record => {
+    if (!record || record.length < 5) return;
     
-    // Check if there's a valid YouTube URL
+    // Add non-empty fields to their respective arrays
+    if (record[0]?.trim()) validFields.occupations.push(record[0].trim());
+    if (record[1]?.trim()) validFields.evilThings.push(record[1].trim());
+    if (record[2]?.trim()) validFields.reasons.push(record[2].trim());
+    if (record[3]?.trim()) validFields.extraInfos.push(record[3].trim());
+    
+    // Only add valid YouTube URLs
     const youtubeUrl = record[4]?.trim();
-    return youtubeUrl && extractYouTubeId(youtubeUrl) !== null;
+    if (youtubeUrl && extractYouTubeId(youtubeUrl) !== null) {
+      validFields.youtubeUrls.push(youtubeUrl);
+    }
   });
 
-  if (!validRecords.length) {
-    throw new Error('No valid quotes with YouTube videos found');
+  // Check if we have enough valid data
+  if (!validFields.occupations.length || 
+      !validFields.evilThings.length || 
+      !validFields.reasons.length || 
+      !validFields.extraInfos.length || 
+      !validFields.youtubeUrls.length) {
+    throw new Error('Not enough valid data in CSV');
   }
 
-  // Get random record
-  const record = validRecords[Math.floor(Math.random() * validRecords.length)];
-  
-  // Extract YouTube ID (we know it's valid from the filter above)
-  const youtubeUrl = extractYouTubeId(record[4]);
+  // Randomly select one item from each array
+  function getRandomItem<T>(arr: T[]): T {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
   
   return {
-    occupation: record[0],
-    evilThing: record[1],
-    reason: record[2],
-    extraInfo: record[3],
-    youtubeUrl
+    occupation: getRandomItem(validFields.occupations),
+    evilThing: getRandomItem(validFields.evilThings),
+    reason: getRandomItem(validFields.reasons),
+    extraInfo: getRandomItem(validFields.extraInfos),
+    youtubeUrl: extractYouTubeId(getRandomItem(validFields.youtubeUrls))
   };
 }
 
