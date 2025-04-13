@@ -20,19 +20,8 @@ interface QuoteData {
 }
 
 async function getRandomQuote(): Promise<QuoteData> {
-  // In Next.js, relative URLs are automatically handled for both dev and prod
-  const response = await fetch('/api/quotes', {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    cache: 'no-store'
-  });
-  
-  if (!response.ok) {
-    throw new Error('Failed to fetch quote');
-  }
-  
+  const response = await fetch('/api/quotes', { cache: 'no-store', next: { revalidate: 0 } });
+  if (!response.ok) throw new Error('Failed to fetch quote');
   return response.json();
 }
 
@@ -46,7 +35,22 @@ function QuoteSection({ label, content }: { label: string; content: string }) {
 }
 
 export default async function Home() {
-  const quote = await getRandomQuote();
+  let quote: QuoteData;
+  try {
+    quote = await getRandomQuote();
+  } catch (error) {
+    console.error('Failed to fetch quote:', error);
+    return (
+      <main className="min-h-screen bg-black text-white relative flex items-center justify-center">
+        <div className="text-center p-8">
+          <h1 className="text-6xl font-bold mb-12 title-font text-white">GAY EVIL BOYFRIEND</h1>
+          <p className="text-xl mb-8">Something went wrong fetching your evil boyfriend. Try refreshing!</p>
+          <RefreshButton />
+        </div>
+      </main>
+    );
+  }
+
   const randomImage = images[Math.floor(Math.random() * images.length)];
 
   return (
