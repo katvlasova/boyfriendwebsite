@@ -11,12 +11,42 @@ const images = [
   '/crt_scanline_high_contrast_bw_4.png'
 ];
 
-async function getRandomQuote() {
-  const res = await fetch('/api/quotes', { cache: 'no-store' });
+interface QuoteData {
+  occupation: string;
+  evilThing: string;
+  reason: string;
+  extraInfo: string;
+  youtubeUrl: string | null;
+}
+
+async function getRandomQuote(): Promise<QuoteData> {
+  const res = await fetch(`${process.env.VERCEL_URL ? 'https://' + process.env.VERCEL_URL : ''}/api/quotes`, {
+    cache: 'no-store'
+  });
+  
   if (!res.ok) {
     throw new Error('Failed to fetch quote');
   }
+  
   return res.json();
+}
+
+interface QuoteSectionProps {
+  heading: string;
+  content: string;
+}
+
+function QuoteSection({ heading, content }: QuoteSectionProps) {
+  return (
+    <div className="bg-black px-4 sm:px-6 py-3">
+      <h2 className="text-lg sm:text-xl font-semibold text-red-700 mb-2 sm:mb-3 flex items-center gap-2 font-bebas tracking-wider">
+        {heading}:
+      </h2>
+      <div className="text-lg text-gray-300 gothic-font">
+        {content}
+      </div>
+    </div>
+  );
 }
 
 export default async function Home() {
@@ -75,24 +105,11 @@ export default async function Home() {
                 </div>
               </div>
             )}
-
-            <RefreshButton />
           </div>
+
+          <RefreshButton />
         </div>
       </div>
     </main>
-  );
-}
-
-function QuoteSection({ heading, content }: { heading: string; content: string }) {
-  return (
-    <div className="bg-black px-4 sm:px-6 py-3">
-      <h2 className="text-lg sm:text-xl font-semibold text-red-700 mb-2 sm:mb-3 flex items-center gap-2 font-bebas tracking-wider">
-        {heading}:
-      </h2>
-      <p className="text-base sm:text-lg text-gray-300 max-h-[150px] sm:max-h-[200px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-red-700 scrollbar-track-black">
-        {content}
-      </p>
-    </div>
   );
 } 
