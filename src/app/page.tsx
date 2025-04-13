@@ -20,19 +20,13 @@ interface QuoteData {
 }
 
 async function getRandomQuote(): Promise<QuoteData> {
-  // Get the base URL from environment or use relative URL
-  const baseUrl = process.env.VERCEL_URL 
-    ? `https://${process.env.VERCEL_URL}`
-    : process.env.NEXT_PUBLIC_VERCEL_URL
-    ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
-    : 'http://localhost:3004';
-    
-  const response = await fetch(`${baseUrl}/api/quotes`, {
+  // In Next.js, relative URLs are automatically handled for both dev and prod
+  const response = await fetch('/api/quotes', {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
     },
-    next: { revalidate: 0 }
+    cache: 'no-store'
   });
   
   if (!response.ok) {

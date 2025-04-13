@@ -11,7 +11,19 @@ export async function GET() {
   try {
     // Read the CSV file from the public directory
     const filePath = path.join(process.cwd(), 'public', 'TestResponses_2.csv');
-    const fileContent = await fs.readFile(filePath, 'utf-8');
+    
+    let fileContent: string;
+    try {
+      fileContent = await fs.readFile(filePath, 'utf-8');
+    } catch (error) {
+      console.error('Error reading file:', error);
+      console.log('Current working directory:', process.cwd());
+      console.log('File path:', filePath);
+      return NextResponse.json(
+        { error: 'Failed to read CSV file' },
+        { status: 500 }
+      );
+    }
     
     // Parse all records
     const allRecords = parse(fileContent, {
@@ -64,9 +76,9 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error('Error reading CSV:', error);
+    console.error('Error in GET handler:', error);
     return NextResponse.json(
-      { error: 'Failed to read quotes' },
+      { error: 'Failed to process request' },
       { status: 500 }
     );
   }
