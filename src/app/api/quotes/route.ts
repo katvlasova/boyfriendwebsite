@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { readFileSync } from 'fs';
+import { promises as fs } from 'fs';
 import { parse } from 'csv-parse/sync';
 import path from 'path';
 
@@ -10,9 +10,19 @@ export const revalidate = 0;
 
 export async function GET() {
   try {
-    // Read CSV directly from public directory
-    const csvPath = path.join(process.cwd(), 'public', 'TestResponses_2.csv');
-    const fileContent = readFileSync(csvPath, 'utf-8');
+    // Log the current working directory and file path
+    const cwd = process.cwd();
+    const csvPath = path.join(cwd, 'public', 'TestResponses_2.csv');
+    console.log('Current directory:', cwd);
+    console.log('Looking for CSV at:', csvPath);
+
+    // List files in public directory
+    const publicFiles = await fs.readdir(path.join(cwd, 'public'));
+    console.log('Files in public directory:', publicFiles);
+
+    // Read CSV file
+    const fileContent = await fs.readFile(csvPath, 'utf-8');
+    console.log('Successfully read CSV file');
     
     // Parse CSV
     const records = parse(fileContent, {
@@ -20,6 +30,7 @@ export async function GET() {
       from_line: 2,
       trim: true
     }) as string[][];
+    console.log('Successfully parsed CSV, found', records.length, 'records');
 
     // Get random valid record
     const validRecords = records.filter((record: string[]) => 
@@ -29,12 +40,18 @@ export async function GET() {
       record[2]?.trim() && 
       record[3]?.trim()
     );
+    console.log('Found', validRecords.length, 'valid records');
 
     if (!validRecords.length) {
       throw new Error('No valid records found');
     }
 
     const record = validRecords[Math.floor(Math.random() * validRecords.length)];
+    console.log('Selected record:', { 
+      occupation: record[0],
+      evilThing: record[1].substring(0, 20) + '...',
+      hasYouTube: !!record[4]?.trim()
+    });
 
     return NextResponse.json({
       occupation: record[0],
@@ -49,8 +66,12 @@ export async function GET() {
       }
     });
 
-  } catch (error) {
-    console.error('Error:', error);
+  } catch (error: any) {
+    console.error('Detailed error:', {
+      message: error?.message || 'Unknown error',
+      stack: error?.stack || 'No stack trace',
+      name: error?.name || 'Unknown error type'
+    });
     return NextResponse.json({ error: 'Failed to get quote' }, { status: 500 });
   }
 } 
