@@ -3,6 +3,10 @@ import { promises as fs } from 'fs';
 import { parse } from 'csv-parse/sync';
 import path from 'path';
 
+// Add this export at the top of the file, after the imports
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 // List of background images
 const images = [
   '/crt_scanline_high_contrast_bw_1.png',
