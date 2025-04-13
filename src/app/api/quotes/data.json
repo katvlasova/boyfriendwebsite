@@ -1,0 +1,18 @@
+{
+  "quotes": [
+    {
+      "occupation": "Software Developer",
+      "evilThing": "Writes code without comments",
+      "reason": "To watch junior developers suffer",
+      "extraInfo": "Also uses single-letter variable names",
+      "youtubeUrl": null
+    },
+    {
+      "occupation": "Coffee Shop Owner",
+      "evilThing": "Secretly serves decaf",
+      "reason": "Enjoys watching people fall asleep at work",
+      "extraInfo": "Labels it as 'extra strong blend'",
+      "youtubeUrl": null
+    }
+  ]
+} 

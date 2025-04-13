@@ -1,59 +1,68 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
+import { promises as fs } from 'fs';
 import path from 'path';
 import { parse } from 'csv-parse/sync';
 
+// Force dynamic rendering and use Node.js runtime
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export async function GET() {
   try {
+    // Read the CSV file from the public directory
     const filePath = path.join(process.cwd(), 'public', 'TestResponses_2.csv');
-    const fileContent = fs.readFileSync(filePath, 'utf-8');
+    const fileContent = await fs.readFile(filePath, 'utf-8');
     
     // Parse all records
     const allRecords = parse(fileContent, {
       skip_empty_lines: true,
       from_line: 2, // Skip header row
+      trim: true,
+      columns: false
     }) as string[][];
 
-    // Get valid values for each column
-    const validOccupations = allRecords
-      .map(record => record[0]?.trim())
-      .filter((text): text is string => !!text);
+    // Filter out any empty records and ensure all required fields are present
+    const validRecords = allRecords.filter(record => {
+      if (!record || record.length < 5) return false;
+      return record[0]?.trim() && 
+             record[1]?.trim() && 
+             record[2]?.trim() && 
+             record[3]?.trim();
+    });
 
-    const validEvilThings = allRecords
-      .map(record => record[1]?.trim())
-      .filter((text): text is string => !!text);
+    if (validRecords.length === 0) {
+      console.error('No valid records found in CSV');
+      return NextResponse.json(
+        { error: 'No valid quotes available' },
+        { status: 500 }
+      );
+    }
 
-    const validReasons = allRecords
-      .map(record => record[2]?.trim())
-      .filter((text): text is string => !!text);
+    // Get a random record
+    const randomRecord = validRecords[Math.floor(Math.random() * validRecords.length)];
 
-    const validExtraInfo = allRecords
-      .map(record => record[3]?.trim())
-      .filter((text): text is string => !!text);
+    // Format the YouTube URL - only check column 5 (index 4)
+    let youtubeUrl = null;
+    const url = randomRecord[4]?.trim();
+    if (url && (url.includes('youtube.com') || url.includes('youtu.be'))) {
+      youtubeUrl = url;
+    }
 
-    // Get all valid YouTube URLs from column 5
-    const validYoutubeUrls = allRecords
-      .map((record: string[]) => record[4]?.trim())
-      .filter((url: string | undefined): url is string => {
-        if (!url) return false;
-        try {
-          const urlObj = new URL(url);
-          return urlObj.hostname.includes('youtube.com') || urlObj.hostname === 'youtu.be';
-        } catch {
-          return false;
-        }
-      });
-
-    // Return a random quote
-    const randomQuote = {
-      occupation: validOccupations[Math.floor(Math.random() * validOccupations.length)],
-      evilThing: validEvilThings[Math.floor(Math.random() * validEvilThings.length)],
-      reason: validReasons[Math.floor(Math.random() * validReasons.length)],
-      extraInfo: validExtraInfo[Math.floor(Math.random() * validExtraInfo.length)],
-      youtubeUrl: validYoutubeUrls[Math.floor(Math.random() * validYoutubeUrls.length)],
-    };
-
-    return NextResponse.json(randomQuote);
+    // Return the random record in the correct format with CORS headers
+    return NextResponse.json({
+      occupation: randomRecord[0],
+      evilThing: randomRecord[1],
+      reason: randomRecord[2],
+      extraInfo: randomRecord[3],
+      youtubeUrl: youtubeUrl
+    }, {
+      headers: {
+        'Cache-Control': 'no-store',
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET',
+      },
+    });
   } catch (error) {
     console.error('Error reading CSV:', error);
     return NextResponse.json(

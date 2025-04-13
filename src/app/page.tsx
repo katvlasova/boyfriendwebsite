@@ -20,94 +20,71 @@ interface QuoteData {
 }
 
 async function getRandomQuote(): Promise<QuoteData> {
-  const res = await fetch(`${process.env.VERCEL_URL ? 'https://' + process.env.VERCEL_URL : ''}/api/quotes`, {
-    cache: 'no-store'
+  // Get the base URL from environment or use relative URL
+  const baseUrl = process.env.VERCEL_URL 
+    ? `https://${process.env.VERCEL_URL}`
+    : process.env.NEXT_PUBLIC_VERCEL_URL
+    ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
+    : 'http://localhost:3004';
+    
+  const response = await fetch(`${baseUrl}/api/quotes`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    next: { revalidate: 0 }
   });
   
-  if (!res.ok) {
+  if (!response.ok) {
     throw new Error('Failed to fetch quote');
   }
   
-  return res.json();
+  return response.json();
 }
 
-interface QuoteSectionProps {
-  heading: string;
-  content: string;
-}
-
-function QuoteSection({ heading, content }: QuoteSectionProps) {
+function QuoteSection({ label, content }: { label: string; content: string }) {
   return (
-    <div className="bg-black px-4 sm:px-6 py-3">
-      <h2 className="text-lg sm:text-xl font-semibold text-red-700 mb-2 sm:mb-3 flex items-center gap-2 font-bebas tracking-wider">
-        {heading}:
-      </h2>
-      <div className="text-lg text-gray-300 gothic-font">
-        {content}
-      </div>
+    <div className="mb-4">
+      <h2 className="text-xl font-bold mb-2 title-font text-red-600">{label}</h2>
+      <p className="text-lg title-font">{content}</p>
     </div>
   );
 }
 
 export default async function Home() {
-  const randomQuote = await getRandomQuote();
+  const quote = await getRandomQuote();
   const randomImage = images[Math.floor(Math.random() * images.length)];
 
   return (
-    <main className="min-h-screen bg-black pt-0 px-4 sm:px-8 pb-8">
-      <div className="max-w-2xl mx-auto bg-black">
-        <h1 className="text-[3.85rem] sm:text-[5.5rem] font-bold text-center text-white bg-black font-bebas tracking-[-0.01em] leading-none py-2 w-full">
-          GAY EVIL BOYFRIEND
-        </h1>
-
-        <div className="px-4 sm:p-8">
-          <div className="relative w-full max-w-sm mx-auto">
-            <div className="relative aspect-square w-full">
-              <Image
-                src={randomImage}
-                alt="Evil Boyfriend Reference"
-                fill
-                sizes="(max-width: 768px) 100vw, 400px"
-                className="object-cover"
-                priority
-              />
-            </div>
-          </div>
+    <main className="min-h-screen bg-black text-white relative">
+      <div className="absolute inset-0 z-0">
+        <Image
+          src={randomImage}
+          alt="Background"
+          fill
+          style={{ objectFit: 'cover', opacity: 0.5 }}
+          priority
+        />
+      </div>
+      
+      <div className="relative z-10 container mx-auto px-4 py-8">
+        <h1 className="text-6xl font-bold text-center mb-12 title-font text-white">GAY EVIL BOYFRIEND</h1>
+        <div className="max-w-3xl mx-auto bg-black/80 p-8 rounded-lg">
+          <QuoteSection label="Occupation" content={quote.occupation} />
+          <QuoteSection label="Most Evil Thing I've done" content={quote.evilThing} />
+          <QuoteSection label="Why we should come into union" content={quote.reason} />
+          <QuoteSection label="Something you should know" content={quote.extraInfo} />
           
-          <div className="space-y-4 mt-4">
-            <QuoteSection
-              heading="Occupation"
-              content={randomQuote.occupation}
-            />
-            
-            <QuoteSection
-              heading="Most evil thing I've done"
-              content={randomQuote.evilThing}
-            />
-            
-            <QuoteSection
-              heading="We should get together because"
-              content={randomQuote.reason}
-            />
-            
-            <QuoteSection
-              heading="Something else you should know"
-              content={randomQuote.extraInfo}
-            />
-
-            {randomQuote.youtubeUrl && (
-              <div className="bg-black px-4 sm:px-6 py-3">
-                <h2 className="text-lg sm:text-xl font-semibold text-red-700 mb-2 sm:mb-3 flex items-center gap-2 font-bebas tracking-wider">
-                  I'M LISTENING TO:
-                </h2>
-                <div className="text-lg text-gray-300">
-                  <YouTubeEmbed url={randomQuote.youtubeUrl} />
-                </div>
-              </div>
-            )}
+          {quote.youtubeUrl && (
+            <div className="mt-8">
+              <h2 className="text-xl font-bold mb-2 title-font text-red-600">I'm listening to</h2>
+              <YouTubeEmbed url={quote.youtubeUrl} />
+            </div>
+          )}
+          
+          <div className="mt-8 flex justify-center">
+            <RefreshButton />
           </div>
-
-          <RefreshButton />
         </div>
       </div>
     </main>
